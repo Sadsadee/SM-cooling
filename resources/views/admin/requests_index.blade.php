@@ -70,10 +70,12 @@
                                     <span class="text-[10px] bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded-full font-bold">NEW</span>
                                 </div>
                                 <p class="font-black text-gray-800 text-lg leading-tight">{{ $job->customer->name }}</p>
-                                <p class="text-sm text-blue-600 font-bold mb-4">{{ $job->service->service_name }}</p>
+                                {{-- เพิ่มเบอร์โทร --}}
+                                <p class="text-xs font-bold text-blue-600 mb-1 underline"> {{ $job->customer->phone }}</p>
+                                <p class="text-sm text-gray-500 font-bold mb-4">{{ $job->service->service_name }}</p>
                                 
                                 <div class="flex gap-2">
-                                    <a href="tel:{{ $job->customer->phone }}" class="flex-1 bg-gray-100 text-center py-2.5 rounded-xl text-xs font-bold hover:bg-gray-200 transition">📞 โทรหา</a>
+                                    <a href="tel:{{ $job->customer->phone }}" class="flex-1 bg-gray-100 text-center py-2.5 rounded-xl text-xs font-bold hover:bg-gray-200 transition"> โทรออก</a>
                                     <form action="{{ route('admin.request_payment', $job->id) }}" method="POST" class="flex-1">
                                         @csrf
                                         <button type="submit" class="w-full bg-blue-600 text-white py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition">
@@ -96,9 +98,11 @@
                     </h3>
                     <div class="space-y-4 overflow-y-auto max-h-[70vh] pr-2">
                         @forelse($waitingPaymentJobs as $job)
-                            <div class="bg-white p-5 rounded-3xl shadow-sm border border-red-50 relative">
-                                <p class="font-bold text-gray-500">{{ $job->customer->name }}</p>
-                                <p class="text-xs text-gray-400 mb-4">{{ $job->service->service_name }}</p>
+                            <div class="bg-white p-5 rounded-3xl shadow-sm border border-red-50 relative hover:shadow-md transition">
+                                <p class="font-bold text-gray-800">{{ $job->customer->name }}</p>
+                                {{-- เพิ่มเบอร์โทร --}}
+                                <p class="text-xs font-bold text-blue-600 underline"><a href="tel:{{ $job->customer->phone }}"> {{ $job->customer->phone }}</a></p>
+                                <p class="text-xs text-gray-400 mb-4 mt-1">{{ $job->service->service_name }}</p>
                                 <div class="flex items-center justify-between">
                                     <span class="text-[10px] text-red-400 italic">{{ $job->updated_at->diffForHumans() }}</span>
                                     <a href="{{ route('admin.requests.show', $job->id) }}" class="text-[10px] font-bold text-blue-500 underline">ตรวจสลิป</a>
@@ -120,6 +124,8 @@
                         @forelse($paidJobs as $job)
                             <div class="bg-white p-6 rounded-3xl shadow-xl border-2 border-green-500">
                                 <p class="font-black text-gray-800 text-lg mb-1">{{ $job->customer->name }}</p>
+                                {{-- เพิ่มเบอร์โทร --}}
+                                <p class="text-xs font-bold text-blue-600 mb-2 underline"><a href="tel:{{ $job->customer->phone }}"> {{ $job->customer->phone }}</a></p>
                                 <p class="text-sm text-gray-500 mb-5 leading-tight">{{ $job->service->service_name }}</p>
                                 
                                 <form action="{{ route('admin.requests.assign', $job->id) }}" method="POST" class="space-y-3">
@@ -163,13 +169,16 @@
                                     <p class="text-sm font-bold text-blue-600 leading-tight">{{ $job->service->service_name }}</p>
                                     <p class="text-[10px] text-gray-400 mt-1 uppercase tracking-tighter">ID: #{{ $job->id }}</p>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-600 font-medium">{{ $job->customer->name }}</td>
+                                <td class="px-6 py-4">
+                                    <p class="text-sm text-gray-800 font-bold">{{ $job->customer->name }}</p>
+                                    {{-- เพิ่มเบอร์โทรในตารางประวัติ --}}
+                                    <p class="text-xs text-blue-500 underline"><a href="tel:{{ $job->customer->phone }}">{{ $job->customer->phone }}</a></p>
+                                </td>
                                 <td class="px-6 py-4">
                                     <div class="flex flex-col items-start gap-2">
                                         <span class="text-sm font-bold text-gray-800">{{ $job->tech->name ?? 'ยังไม่ระบุ' }}</span>
                                         
                                         @if($job->tech_id)
-                                            {{-- ปุ่มเปิด Popup --}}
                                             <button type="button" onclick="openPasswordModal({{ $job->tech_id }}, '{{ $job->tech->name }}')" class="inline-flex items-center px-2 py-1 bg-orange-50 text-orange-600 border border-orange-200 rounded-lg text-[10px] font-bold hover:bg-orange-500 hover:text-white transition">
                                                 <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
                                                 ตั้งรหัสผ่านใหม่
@@ -190,7 +199,6 @@
                                         {{ $job->status }}
                                     </span>
 
-                                    {{-- ปุ่มพิมพ์ใบเสร็จ --}}
                                     @if(in_array($job->status, ['completed', 'approved', 'paid_confirmed']))
                                     <div class="mt-2 text-center">
                                         <a href="{{ route('admin.requests.receipt', $job->id) }}" target="_blank" class="inline-flex items-center px-2 py-1 bg-gray-800 text-white rounded text-[10px] font-bold hover:bg-black transition shadow-sm">
@@ -209,7 +217,7 @@
         </div>
     </div>
 
-    {{-- 🛑 Popup (Modal) สำหรับพิมพ์รหัสผ่านใหม่ --}}
+    {{-- Popup สำหรับตั้งรหัสผ่าน --}}
     <div id="passwordModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center z-50 backdrop-blur-sm transition-opacity">
         <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md transform scale-100 transition-transform">
             <h3 class="text-xl font-bold mb-2 text-gray-800 flex items-center">
@@ -232,15 +240,12 @@
         </div>
     </div>
 
-    {{-- JavaScript สำหรับคุม Popup --}}
     <script>
         function openPasswordModal(techId, techName) {
             const modal = document.getElementById('passwordModal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             document.getElementById('modalTechName').innerText = techName;
-            
-            // เปลี่ยน URL ของ Form ให้ตรงกับ ID ของช่างที่กด
             document.getElementById('passwordForm').action = `/admin/tech/${techId}/update-password`;
         }
 

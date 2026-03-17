@@ -3,15 +3,19 @@
         <div class="flex justify-between h-16">
             <div class="flex">
                 <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}">
+                    {{-- โลโก้: ถ้า Login ให้ไป Dashboard ถ้าไม่ Login ให้ไปหน้าแรก --}}
+                    <a href="{{ Auth::check() ? route('dashboard') : url('/') }}">
                         <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
                     </a>
                 </div>
 
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
+                    {{-- จุดที่ 1: เมนู Dashboard (สำหรับหน้าจอคอม) --}}
+                    @auth
+                        <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                            {{ __('Dashboard') }}
+                        </x-nav-link>
+                    @endauth
 
                     {{-- เมนูสำหรับ Admin --}}
                     @if(Auth::user()?->role === 'admin')
@@ -19,19 +23,15 @@
                             {{ __('จัดการคำร้อง') }}
                         </x-nav-link>
 
-                        {{-- แก้ไข: ให้เมนูจัดการช่าง ลิงก์ไปที่หน้าจัดการผู้ใช้งาน (ที่มีจุดไฟสถานะ) --}}
-                        {{-- เมนูจัดการช่าง --}}
                         <x-nav-link :href="route('admin.techs.index')" :active="request()->routeIs('admin.techs.index')">
                             {{ __('จัดการช่าง') }}
                         </x-nav-link>
 
-                        {{-- แก้ไข: ให้เมนูบริการและอะไหล่ ลิงก์ไปที่หน้าคลัง Inventory ที่เพิ่งสร้างใหม่ --}}
                         <x-nav-link :href="route('admin.inventory.index')"
                             :active="request()->routeIs('admin.inventory.index')">
                             {{ __('บริการและอะไหล่') }}
                         </x-nav-link>
 
-                        {{-- เมนูจัดการผู้ใช้งาน --}}
                         <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.index')">
                             {{ __('จัดการผู้ใช้งาน') }}
                         </x-nav-link>
@@ -44,7 +44,7 @@
                         </x-nav-link>
                     @endif
 
-                    {{-- เมนูสำหรับ ลูกค้า (ถ้า Log in) --}}
+                    {{-- เมนูสำหรับ ลูกค้า --}}
                     @if(Auth::user()?->role === 'customer')
                         <x-nav-link href="/request-service" :active="request()->is('request-service')">
                             {{ __('แจ้งงานใหม่') }}
@@ -63,7 +63,6 @@
                             <button
                                 class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
                                 <div>{{ Auth::user()->name }}</div>
-
                                 <div class="ms-1">
                                     <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg"
                                         viewBox="0 0 20 20">
@@ -82,8 +81,8 @@
 
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
-                                <x-dropdown-link :href="route('logout')" onclick="event.preventDefault();
-                                                                            this.closest('form').submit();">
+                                <x-dropdown-link :href="route('logout')"
+                                    onclick="event.preventDefault(); this.closest('form').submit();">
                                     {{ __('Log Out') }}
                                 </x-dropdown-link>
                             </form>
@@ -109,11 +108,22 @@
         </div>
     </div>
 
+    {{-- เมนูสำหรับหน้าจอมือถือ (Responsive) --}}
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
+            {{-- จุดที่ 2: เมนู Dashboard (สำหรับมือถือ) --}}
+            @auth
+                <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                    {{ __('Dashboard') }}
+                </x-responsive-nav-link>
+            @endauth
+
+            {{-- เพิ่มเมนูอื่นๆ ในมือถือตาม Role --}}
+            @if(Auth::user()?->role === 'customer')
+                <x-responsive-nav-link href="/request-service" :active="request()->is('request-service')">
+                    {{ __('แจ้งงานใหม่') }}
+                </x-responsive-nav-link>
+            @endif
         </div>
 
         @auth
@@ -130,8 +140,8 @@
 
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <x-responsive-nav-link :href="route('logout')" onclick="event.preventDefault();
-                                                                    this.closest('form').submit();">
+                        <x-responsive-nav-link :href="route('logout')"
+                            onclick="event.preventDefault(); this.closest('form').submit();">
                             {{ __('Log Out') }}
                         </x-responsive-nav-link>
                     </form>
