@@ -1,4 +1,9 @@
 <x-app-layout>
+    {{-- ✨ ส่วนที่ 1: เพิ่ม Form Logout (ซ่อนไว้) --}}
+    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
+        @csrf
+    </form>
+
     <div class="bg-gray-50 min-h-screen pb-20">
         {{-- Header ส่วนหัว --}}
         <div class="bg-blue-600 pt-10 pb-20 px-6 rounded-b-[3rem] shadow-lg">
@@ -7,9 +12,12 @@
                     <p class="text-blue-100 text-sm">ยินดีต้อนรับช่าง</p>
                     <h1 class="text-2xl font-black">{{ Auth::user()->name }}</h1>
                 </div>
-                <div class="bg-white/20 p-3 rounded-2xl backdrop-blur-md">
-                    <span class="text-2xl">👨‍🔧</span>
-                </div>
+                {{-- ✨ ส่วนที่ 2: แก้ไขไอคอนขวาบนให้กด Logout ได้ --}}
+                <button onclick="if(confirm('ยืนยันการออกจากระบบ?')) document.getElementById('logout-form').submit();"
+                    class="bg-white/20 p-3 rounded-2xl backdrop-blur-md active:scale-90 transition group">
+                    <span class="text-2xl group-hover:hidden">👨‍🔧</span>
+                    <span class="text-xl hidden group-hover:inline">🚪</span>
+                </button>
             </div>
 
             {{-- การ์ดสรุปงานสั้นๆ --}}
@@ -39,7 +47,6 @@
                 @forelse($jobs as $job)
                     <div
                         class="bg-white rounded-[2.5rem] shadow-xl shadow-blue-900/5 border border-gray-100 p-6 mb-4 relative overflow-hidden group active:scale-95 transition">
-                        {{-- ป้ายสถานะมุมขวา --}}
                         <div class="absolute top-0 right-0">
                             <span
                                 class="bg-blue-600 text-white text-[10px] font-black px-4 py-1.5 rounded-bl-2xl uppercase">
@@ -71,14 +78,12 @@
                             </div>
                         </div>
 
-                        {{-- ปุ่มกด --}}
                         <div class="grid grid-cols-2 gap-3">
-                            <a href="https://www.google.com/maps/search/{{ urlencode($job->customer->address) }}"
+                            <a href="https://www.google.com/maps/search/?api=1&query={{ urlencode($job->customer->address) }}"
                                 target="_blank"
                                 class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-2xl text-sm font-black flex items-center justify-center transition">
                                 🗺️ แผนที่
                             </a>
-                            {{-- แบบใหม่ที่ถูกต้อง --}}
                             <a href="{{ route('tech.requests.show', $job->id) }}"
                                 class="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl text-sm font-black flex items-center justify-center shadow-lg shadow-blue-200 transition w-full">
                                 ⚡ เริ่มงาน
@@ -125,10 +130,11 @@
         </div>
     </div>
 
-    {{-- Bottom Navigation (เหมือนแอปจริง) --}}
+    {{-- Bottom Navigation --}}
     <div
         class="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-gray-100 px-10 py-4 flex justify-around items-center z-50">
-        <a href="#" class="text-blue-600 flex flex-col items-center">
+        <a href="{{ route('tech.dashboard') }}"
+            class="{{ request()->routeIs('tech.dashboard') ? 'text-blue-600' : 'text-gray-400' }} flex flex-col items-center">
             <span class="text-xl">🏠</span>
             <span class="text-[10px] font-bold mt-1 uppercase">งานหลัก</span>
         </a>
@@ -136,9 +142,12 @@
             <span class="text-xl">📊</span>
             <span class="text-[10px] font-bold mt-1 uppercase">สรุปยอด</span>
         </a>
-        <a href="#" class="text-gray-400 flex flex-col items-center">
+        {{-- ✨ ส่วนที่ 3: แก้ไขเมนูตั้งค่าให้กด Logout ได้ --}}
+        <button
+            onclick="if(confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) document.getElementById('logout-form').submit();"
+            class="text-red-400 flex flex-col items-center">
             <span class="text-xl">⚙️</span>
-            <span class="text-[10px] font-bold mt-1 uppercase">ตั้งค่า</span>
-        </a>
+            <span class="text-[10px] font-bold mt-1 uppercase">ออกจากระบบ</span>
+        </button>
     </div>
 </x-app-layout>

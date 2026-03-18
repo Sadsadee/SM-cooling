@@ -11,8 +11,13 @@ class AdminSparePartController extends Controller
     public function index()
     {
         $parts = SparePart::all();
-        $services = Service::all();
-        return view('admin.inventory_index', compact('parts', 'services'));
+        // ✨ เปลี่ยนจาก ServiceType::all() เป็น Service::all() ครับ
+        $services = Service::all(); 
+
+        return \Inertia\Inertia::render('Admin/Inventory', [
+            'parts' => $parts,
+            'services' => $services,
+        ]);
     }
 
     // จัดการอะไหล่ (เพิ่ม/อัปเดตสต็อก)

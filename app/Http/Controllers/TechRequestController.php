@@ -4,50 +4,73 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\ServiceRequest;
-use App\Models\User;
+use App\Models\SparePart;           // ✨ เพิ่มไว้ด้านบน
+use App\Models\RequestSparePart;    // ✨ เพิ่มไว้ด้านบน
+use App\Models\User;                // ✨ เพิ่มไว้ด้านบน
+use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 
 class TechRequestController extends Controller
 {
     // แสดงรายการงานที่ช่างคนนี้ได้รับมอบหมาย
+    // แสดงรายการงานที่ช่างคนนี้ได้รับมอบหมาย
     public function index()
     {
-        // งานที่ต้องทำ (วันนี้)
-        $jobs = ServiceRequest::with(['customer', 'service'])
-            ->where('tech_id', Auth::id())
-            ->whereIn('status', ['approved', 'in_progress'])
-            ->orderBy('appointment_date', 'asc')
+        $userId = Auth::id();
+
+        // 1. คิวงานปัจจุบัน (in_progress)
+        $pendingJobs = ServiceRequest::with(['customer', 'service'])
+            ->where('tech_id', $userId)
+            ->where('status', 'in_progress')
+            ->orderBy('created_at', 'desc')
             ->get();
 
-        // งานที่ทำเสร็จแล้ว (ประวัติ)
-        $history = ServiceRequest::with(['customer', 'service'])
-            ->where('tech_id', Auth::id())
+        // 2. ประวัติการทำงาน (completed) - ดึงมาโชว์แค่ 10 งานล่าสุดจะได้ไม่หนักเครื่อง
+        $completedJobs = ServiceRequest::with(['customer', 'service'])
+            ->where('tech_id', $userId)
             ->where('status', 'completed')
             ->orderBy('updated_at', 'desc')
+            ->limit(10)
             ->get();
 
-        return view('tech.dashboard', compact('jobs', 'history'));
+        return Inertia::render('Tech/Dashboard', [
+            'pendingJobs' => $pendingJobs,
+            'completedJobs' => $completedJobs
+        ]);
     }
 
     public function show($id)
     {
-        $job = ServiceRequest::with(['customer', 'service'])->findOrFail($id);
+        // ✨ ใช้ spare_parts (snake_case) ตามที่ตั้งใน Model
+        $job = ServiceRequest::with(['customer', 'service', 'spare_parts.spare_part'])
+            ->findOrFail($id);
 
-        // ตรงนี้เราจะสร้างไฟล์ View ใหม่ชื่อ job_detail ในโฟลเดอร์ tech
-        return view('tech.job_detail', compact('job'));
+        // ดึงอะไหล่ที่มีในคลังไปให้ช่างเลือก
+        $inventory = SparePart::where('stock', '>', 0)->get();
+
+        return Inertia::render('Tech/Show', [
+            'job' => $job,
+            'inventory' => $inventory
+        ]);
     }
 
     public function addPart(Request $request, $id)
     {
         // 1. รับค่าและหาข้อมูลอะไหล่
-        $part = \App\Models\SparePart::findOrFail($request->spare_part_id);
+        $part = SparePart::findOrFail($request->spare_part_id);
 
-        // 2. บันทึกข้อมูลลงตารางเชื่อม (ใช้ชื่อคอลัมน์ตาม Migration ของคุณ)
-        \App\Models\RequestSparePart::create([
-            'request_id' => $id,            // ตาม Migration คุณใช้ชื่อนี้
-            'part_id' => $part->id,      // ตาม Migration คุณใช้ชื่อนี้
+        // 🚨 ตรวจสอบสต็อกก่อนตัด (กันเหนียว)
+        if ($part->stock < $request->quantity) {
+            return redirect()->back()->withErrors(['quantity' => 'สินค้าในคลังไม่พอ']);
+        }
+
+        // 2. บันทึกข้อมูลลงตารางเชื่อม
+        RequestSparePart::create([
+            'request_id' => $id,            // ตรวจสอบชื่อคอลัมน์ใน DB ให้ตรงกับใน Model
+            'part_id' => $part->id,
             'quantity' => $request->quantity,
-            'total_price' => $part->price * $request->quantity // บันทึกราคารวมของแถวนี้
+            'price_at_time' => $part->price, // ✨ แนะนำให้เก็บราคา ณ ตอนนั้นไว้ด้วย
+            'total_price' => $part->price * $request->quantity
         ]);
 
         // 3. ตัดสต็อกอะไหล่ออกจากคลัง
@@ -59,23 +82,23 @@ class TechRequestController extends Controller
     // ฟังก์ชันช่างกดแจ้งจบงาน
     public function completeJob(Request $request, $id)
     {
-        // 1. ดึงข้อมูลงานพร้อมรายการอะไหล่และค่าบริการ
-        $job = \App\Models\ServiceRequest::with(['service', 'spareParts'])->findOrFail($id);
+        // 1. ดึงข้อมูลงาน (เปลี่ยนจาก spareParts เป็น spare_parts ให้ตรงกัน)
+        $job = ServiceRequest::with(['service', 'spare_parts'])->findOrFail($id);
 
-        // 2. คำนวณราคาสรุปสุดท้าย (ค่าบริการ + ผลรวมราคาทุกแถวในอะไหล่)
-        $totalPartsPrice = $job->spareParts->sum('total_price');
+        // 2. คำนวณราคาสรุปสุดท้าย
+        $totalPartsPrice = $job->spare_parts->sum('total_price');
         $finalPrice = $job->service->base_price + $totalPartsPrice;
 
-        // 3. อัปเดตสถานะงานเป็นเสร็จสิ้น และบันทึกยอดเงินรวมที่ต้องเก็บจริง
+        // 3. อัปเดตสถานะงาน
         $job->update([
             'status' => 'completed',
             'total_price' => $finalPrice
         ]);
 
-        // ✨ 4. อัปเดตสถานะช่างให้กลับมา "ว่าง" พร้อมรับงานใหม่
-        auth()->user()->update(['is_available' => true]);
+        // 4. อัปเดตสถานะช่างให้กลับมา "ว่าง"
+        // ใช้ Auth::user() โดยตรงได้เลยครับ
+        Auth::user()->update(['is_available' => true]);
 
-        // 5. กลับหน้าหลักพร้อมข้อความแจ้งเตือน
-        return redirect()->route('tech.dashboard')->with('success', 'ปิดงานเรียบร้อยแล้ว! สถานะของคุณคือ: ว่าง (พร้อมรับงานใหม่)');
+        return redirect()->route('tech.dashboard')->with('success', 'ปิดงานเรียบร้อยแล้ว! ขอบคุณที่ตั้งใจทำงานครับ');
     }
 }

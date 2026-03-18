@@ -7,12 +7,14 @@ export default {
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
+        // ✨ เพิ่มบรรทัดนี้เข้าไปครับ เพื่อให้ Tailwind วิ่งไปอ่านไฟล์ React ด้วย
+        './resources/js/**/*.jsx', 
     ],
 
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                sans: ['Kanit', ...defaultTheme.fontFamily.sans],
             },
         },
     },

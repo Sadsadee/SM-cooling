@@ -4,68 +4,139 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\ServiceRequest;
+use App\Models\Service;
 use App\Models\User;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Storage;
 
 class CustomerController extends Controller
 {
-    // หน้า 1: แบบฟอร์มกรอกเบอร์โทรเพื่อค้นหางาน
+    /**
+     * หน้าแรกของลูกค้า (Dashboard)
+     */
+    public function index()
+    {
+        $services = Service::all();
+        // ดึงงานล่าสุดมาโชว์ (ถ้าไม่ login ก็จะได้ array ว่าง)
+        $activeRequests = auth()->check()
+            ? ServiceRequest::with('service')->where('customer_id', auth()->id())->get()
+            : [];
+
+        return Inertia::render('User/Dashboard', [
+            'services' => $services,
+            'activeRequests' => $activeRequests
+        ]);
+    }
+    /**
+     * หน้าสำหรับกรอกเบอร์โทรเพื่อค้นหาสถานะ (หน้า Index ของการติดตาม)
+     */
     public function trackIndex()
     {
-        return view('customer.track_index');
+        // สั่ง Render ไปที่หน้า TrackIndex ในโฟลเดอร์ User
+        return \Inertia\Inertia::render('User/TrackIndex');
     }
 
-    // ฟังก์ชันค้นหางานจากเบอร์โทร
+    /**
+     * ฟังก์ชันค้นหางานจากเบอร์โทร (ผลลัพธ์)
+     */
     public function trackSearch(Request $request)
     {
         $request->validate([
-            'phone' => 'required|numeric'
-        ], [
-            'phone.required' => 'กรุณากรอกเบอร์โทรศัพท์',
-            'phone.numeric' => 'เบอร์โทรศัพท์ต้องเป็นตัวเลขเท่านั้น'
+            'phone' => 'required'
         ]);
 
         // ค้นหาลูกค้าจากเบอร์โทร
-        $customer = User::where('phone', $request->phone)->where('role', 'customer')->first();
+        $customer = \App\Models\User::where('phone', $request->phone)->first();
 
         if (!$customer) {
             return back()->with('error', 'ไม่พบประวัติการแจ้งซ่อมจากเบอร์โทรศัพท์นี้');
         }
 
-        // ดึงประวัติงานของลูกค้าคนนี้ทั้งหมด เรียงจากใหม่ไปเก่า
-        $jobs = ServiceRequest::with('service')
+        // ดึงประวัติงานทั้งหมดของเบอร์นี้
+        $jobs = \App\Models\ServiceRequest::with('service')
             ->where('customer_id', $customer->id)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('customer.track_results', compact('customer', 'jobs'));
+        return \Inertia\Inertia::render('User/TrackResults', [
+            'customer' => $customer,
+            'jobs' => $jobs
+        ]);
     }
 
-    // ฟังก์ชันสำหรับลูกค้าอัปโหลดสลิป
+    /**
+     * หน้าฟอร์มสร้างใบแจ้งซ่อม
+     */
+    public function create()
+    {
+        $services = Service::all();
+        return Inertia::render('User/CreateRequest', [
+            'services' => $services
+        ]);
+    }
+
+    /**
+     * หน้าดูรายละเอียดสถานะงาน และ อัปโหลดสลิป
+     */
+    public function show($id)
+    {
+        // ❌ ลบ ->where('customer_id', auth()->id()) ออก
+        // เพราะตอนนี้ลูกค้าไม่ได้ Login มาครับ
+        $job = ServiceRequest::with(['service', 'customer', 'tech', 'spare_parts.spare_part'])
+            ->findOrFail($id); // หาแค่ ID งานก็พอ
+
+        return Inertia::render('User/ShowStatus', [
+            'job' => $job
+        ]);
+    }
+
+    /**
+     * ฟังก์ชันบันทึกการแจ้งซ่อมใหม่
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'service_id' => 'required|exists:services,id',
+            'problem_details' => 'required|string|max:500',
+            'appointment_date' => 'required|date|after_or_equal:today',
+            'appointment_time' => 'required',
+        ]);
+
+        $requestItem = ServiceRequest::create([
+            'customer_id' => auth()->id(),
+            'service_id' => $request->service_id,
+            'problem_details' => $request->problem_details,
+            'appointment_date' => $request->appointment_date,
+            'appointment_time' => $request->appointment_time,
+            'status' => 'pending', // เริ่มต้นที่สถานะงานเข้าใหม่
+        ]);
+
+        return redirect()->route('customer.dashboard')->with('success', 'ส่งข้อมูลแจ้งซ่อมเรียบร้อยแล้ว!');
+    }
+
+    /**
+     * ฟังก์ชันสำหรับลูกค้าอัปโหลดสลิป
+     */
     public function uploadSlip(Request $request, $id)
     {
         $request->validate([
-            'slip_image' => 'required|image|mimes:jpeg,png,jpg|max:5120', // รับรูปขนาดไม่เกิน 5MB
+            'slip_image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
+        // ❌ ลบ ->where('customer_id', auth()->id()) ออก
         $job = ServiceRequest::findOrFail($id);
 
         if ($request->hasFile('slip_image')) {
             $file = $request->file('slip_image');
-            $filename = time() . '_' . $job->id . '.' . $file->getClientOriginalExtension();
-            
-            // ย้ายไฟล์ไปเก็บที่โฟลเดอร์ public/slips
-            $file->move(public_path('slips'), $filename);
+            $fileName = time() . '_' . $job->id . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('slips'), $fileName);
 
-            // อัปเดตฐานข้อมูล
             $job->update([
-                'slip_filename' => $filename,
-                'status' => 'paid' // เปลี่ยนสถานะเป็น paid เพื่อให้ไปโผล่ในคอลัมน์ 3 ของแอดมิน
+                'slip_filename' => $fileName,
+                'status' => 'paid',
             ]);
-
-            return redirect('/') // เด้งกลับหน้าหลัก (Landing Page)
-        ->with('success', 'ส่งหลักฐานการโอนเงินเรียบร้อยแล้ว! ขอบคุณที่ใช้บริการ SM Cooling Center ครับ');
         }
 
-        return back()->with('error', 'เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ');
+        return back()->with('success', 'แจ้งโอนเงินเรียบร้อยแล้ว');
     }
 }

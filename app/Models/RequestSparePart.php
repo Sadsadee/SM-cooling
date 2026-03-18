@@ -14,9 +14,11 @@ class RequestSparePart extends Model
     // เชื่อมกลับไปหาข้อมูลอะไหล่เพื่อดึงชื่อมาโชว์
     // ไฟล์ app/Models/RequestSparePart.php
 
-public function sparePart()
-{
-    // ถ้าในตารางตั้งชื่อว่า part_id ให้ใส่แบบนี้ครับ
-    return $this->belongsTo(SparePart::class, 'part_id');
-}
+    // 📂 เปิดไฟล์ app/Models/RequestSparePart.php 
+// แล้วเพิ่มฟังก์ชันนี้เข้าไปครับ
+
+    public function spare_part()
+    {
+        return $this->belongsTo(SparePart::class, 'part_id');
+    }
 }

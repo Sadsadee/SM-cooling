@@ -33,6 +33,15 @@ class ServiceRequest extends Model
         return $this->belongsTo(Service::class, 'service_id');
     }
 
+    // 🛠️ เชื่อมกับตาราง RequestSparePart (เพื่อดึงรายการอะไหล่ที่เบิก)
+    // สังเกตในไฟล์ List ด้านซ้ายมือของคุณ Model ชื่อ RequestSparePart.php นะครับ
+    public function spare_parts()
+{
+    // 💡 เปลี่ยน 'service_request_id' เป็นชื่อเสาที่อยู่ในฐานข้อมูลจริงๆ ของคุณ
+    // เช่น ถ้าในตารางชื่อ request_id ก็ใส่ 'request_id' ครับ
+    return $this->hasMany(RequestSparePart::class, 'request_id'); 
+}
+
     // เชื่อมกับตาราง User (เพื่อดึงชื่อช่าง)
     public function tech()
     {

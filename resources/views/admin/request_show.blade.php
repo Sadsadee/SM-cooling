@@ -12,7 +12,8 @@
                     <div class="p-4 bg-gray-50 rounded-2xl">
                         <p class="text-xs text-gray-400 uppercase font-bold">ยอดเงินรวม</p>
                         <p class="font-bold text-blue-600">
-                            {{ number_format($job->total_price ?: $job->service->base_price, 2) }} บาท</p>
+                            {{ number_format($job->total_price ?: $job->service->base_price, 2) }} บาท
+                        </p>
                     </div>
                     <div class="p-4 bg-gray-50 rounded-2xl">
                         <p class="text-xs text-gray-400 uppercase font-bold">สถานะงาน</p>
@@ -28,9 +29,8 @@
                         <div>
                             <p class="text-xs text-orange-400 uppercase font-bold">ช่างที่รับผิดชอบ</p>
                             <p class="text-lg font-black text-gray-800">{{ $job->tech->name }}</p>
-                            <p class="text-xs text-gray-500">📞 {{ $job->tech->phone }}</p>
+                            <p class="text-xs text-gray-500">📞 {{ $job->tech->phone ?? 'ไม่มีเบอร์โทร' }}</p>
                         </div>
-
                     </div>
                 @endif
 
@@ -43,7 +43,8 @@
                         </div>
 
                         @if($job->status == 'paid')
-                            <form action="{{ route('admin.requests.confirm_payment', $job->id) }}" method="POST">
+                            {{-- ✨ แก้ไขชื่อ Route ตรงนี้ให้ตรงกับ web.php แล้วครับ ✨ --}}
+                            <form action="{{ route('admin.confirm_payment', $job->id) }}" method="POST">
                                 @csrf
                                 <button type="submit"
                                     class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-2xl shadow-lg transition duration-200">

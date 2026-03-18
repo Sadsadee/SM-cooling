@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Kanit', sans-serif; }
+        body {
+            font-family: 'Kanit', sans-serif;
+        }
+
         .hero-pattern {
             background-color: #f8fafc;
             background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
@@ -15,6 +19,7 @@
         }
     </style>
 </head>
+
 <body class="antialiased text-gray-800 hero-pattern min-h-screen flex flex-col">
 
     <nav class="bg-white/80 backdrop-blur-md shadow-sm fixed w-full z-50 top-0">
@@ -26,9 +31,11 @@
                 </div>
                 <div class="flex items-center space-x-4">
                     @auth
-                        <a href="{{ url('/dashboard') }}" class="text-sm font-bold text-gray-600 hover:text-blue-600 transition">เข้าสู่ระบบหลังบ้าน</a>
+                        <a href="{{ url('/dashboard') }}"
+                            class="text-sm font-bold text-gray-600 hover:text-blue-600 transition">เข้าสู่ระบบหลังบ้าน</a>
                     @else
-                        <a href="{{ route('login') }}" class="text-sm font-bold text-gray-500 hover:text-blue-600 transition">สำหรับพนักงาน</a>
+                        <a href="{{ route('login') }}"
+                            class="text-sm font-bold text-gray-500 hover:text-blue-600 transition">สำหรับพนักงาน</a>
                     @endauth
                 </div>
             </div>
@@ -37,7 +44,8 @@
 
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-28 w-full">
         @if(session('success'))
-            <div class="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 rounded-xl shadow-lg animate-bounce" role="alert">
+            <div class="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 rounded-xl shadow-lg animate-bounce"
+                role="alert">
                 <div class="flex items-center">
                     <span class="text-2xl mr-3">✅</span>
                     <div>
@@ -51,27 +59,31 @@
 
     <main class="flex-grow flex items-center justify-center">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-            
-            <div class="inline-block bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full font-bold text-sm mb-6 border border-blue-200">
+
+            <div
+                class="inline-block bg-blue-100 text-blue-700 px-4 py-1.5 rounded-full font-bold text-sm mb-6 border border-blue-200">
                 👨‍🔧 บริการรวดเร็ว จริงใจ ได้มาตรฐาน
             </div>
-            
+
             <h1 class="text-5xl md:text-7xl font-black text-gray-900 mb-6 leading-tight">
                 แอร์ไม่เย็น น้ำหยด <br>
                 <span class="text-blue-600">เรียกช่าง SM Cooling</span>
             </h1>
-            
+
             <p class="mt-4 text-xl text-gray-600 max-w-2xl mx-auto mb-10">
-                บริการล้าง ซ่อม ย้าย ติดตั้งเครื่องปรับอากาศทุกชนิด โดยทีมช่างมืออาชีพ ประเมินราคาก่อนซ่อม พร้อมรับประกันงาน
+                บริการล้าง ซ่อม ย้าย ติดตั้งเครื่องปรับอากาศทุกชนิด โดยทีมช่างมืออาชีพ ประเมินราคาก่อนซ่อม
+                พร้อมรับประกันงาน
             </p>
-            
-            <div class="flex flex-col sm:flex-row justify-center gap-4">
-                <a href="{{ route('request.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg py-4 px-10 rounded-full shadow-xl shadow-blue-200 transition transform hover:-translate-y-1 flex items-center justify-center">
-                    <span class="text-2xl mr-2">📝</span> แจ้งซ่อมแอร์
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+                <a href="/request-service"
+                    class="w-full sm:w-auto bg-blue-600 text-white font-black px-10 py-5 rounded-2xl shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95 text-lg">
+                    📝 แจ้งซ่อม/ล้างแอร์เลย
                 </a>
-                
-                <a href="{{ route('track.index') }}" class="bg-white hover:bg-gray-50 text-gray-800 font-bold text-lg py-4 px-10 rounded-full shadow-lg border border-gray-200 transition transform hover:-translate-y-1 flex items-center justify-center">
-                    <span class="text-2xl mr-2">🔍</span> ติดตามสถานะงาน
+
+                <a href="/track-status"
+                    class="w-full sm:w-auto bg-white text-slate-700 font-bold px-10 py-5 rounded-2xl shadow-lg border border-slate-100 hover:border-blue-200 transition-all text-lg">
+                    🔍 ติดตามสถานะงาน
                 </a>
             </div>
 
@@ -104,4 +116,5 @@
     </footer>
 
 </body>
+
 </html>
